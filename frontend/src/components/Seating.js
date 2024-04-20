@@ -1,184 +1,173 @@
-import React, { useEffect } from "react";
-import "./Seating.css";
-import { rows, rows2 } from "./data";
-import { useSelector } from "react-redux";
-const Silver = ["A", "B", "C", "D"];
-const ticketList = {
-  silver: [],
-  platinium: [],
-  price: 0,
-};
-const Seating = ({
-  seatingActive = false,
-  movie_name = "Tom And Jerry",
-  location = "INOX: Neelyog, Ghatkopar E",
-  timeAndDate = "Tomorrow, 12 Mar, 10:30 AM",
-  type1 = "SILVER",
-  type2 = "Premium",
-  ticketPrice1 = 112,
-  ticketPrice2 = 100,
-  ticketListfunc,
-  handleCloseSeatingModal,
-  handleCloseSeatingButton
-}) => {
-  const [seatActive, setSeatActive] = React.useState(seatingActive);
-  const [active, setActive] = React.useState(false);
-  const [rowsData, setRowData] = React.useState(rows);
-  const [rowsData2, setRowData2] = React.useState(rows2);
-  const [price, setPrice] = React.useState(0);
-  const movie_details = useSelector(state => state.booking_details);
+import React, { useState } from 'react';
+import Navbar from './Navbar';
+import Footer from './Footer';
+import axios from 'axios'; // Make sure to install axios if you haven't
 
-  const monthNames = ["January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
-  ];
+const SeatingMap = () => {
+  const movieDetails = {
+    name: "Kung fu panda 4",
+    time: "12:00 PM",
+    date: "2024-04-08",
+    multiplex: "Cineplex 1, Guwahati",
+  };
 
+  const rows = 5;
+  const seatsPerRow = 12;
+  const bookedSeats = ['1_5', '2_6', '3_7'];
+  const prices = {
+    low: ['1_1', '1_2', '1_3', '1_4', '1_5', '1_6', '1_7', '1_8', '1_9', '1_10', '1_11', '1_12'],
+    high: ['5_1', '5_2', '5_3', '5_4', '5_5', '5_6', '5_7', '5_8', '5_9', '5_10', '5_11', '5_12']
+  };
+  const priceMapping = { low: 200, medium: 220, high: 240 };
 
-  // console.log(seatingActive);
+  const [selectedSeats, setSelectedSeats] = useState([]);
+  const [ticketsToBook, setTicketsToBook] = useState(1);
+  const [email, setEmail] = useState('');
+  const [showConfirmationModal, setShowConfirmationModal] = useState(false);
+  const [showFinalModal, setShowFinalModal] = useState(false);
 
-  const handleClick = (value) => {
-    setRowData(
-      rowsData.map((e) =>
-        e.id === value ? { ...e, isSelected: !e.isSelected } : e
-      )
-    );
+  const handleSeatClick = (seatId) => {
+    if (selectedSeats.includes(seatId)) {
+      setSelectedSeats(selectedSeats.filter(seat => seat !== seatId));
+    } else if (selectedSeats.length < ticketsToBook && !bookedSeats.includes(seatId)) {
+      setSelectedSeats([...selectedSeats, seatId]);
+    }
+  };
 
-    setRowData2(
-      rowsData2.map((e) =>
-        e.id === value ? { ...e, isSelected: !e.isSelected } : e
-      )
+  const calculateTotalPrice = () => {
+    return selectedSeats.reduce((total, seat) => {
+      const seatPriceKey = Object.keys(prices).find(key => prices[key].includes(seat)) || 'medium';
+      return total + priceMapping[seatPriceKey];
+    }, 0);
+  };
+
+  const handleBookingConfirmation = () => {
+    setShowConfirmationModal(true);
+  };
+
+  const handlePayment = async () => {
+    try {
+      const response = await axios.post('http://localhost:5000/send-email', {
+        to: email,
+        subject: `Your Tickets for ${movieDetails.name}`,
+        text: `Your tickets for ${movieDetails.name} on ${movieDetails.date} at ${movieDetails.time} are booked successfully. Seats: ${selectedSeats.join(", ")}. Total Amount: ${calculateTotalPrice()}`
+      });
+      setShowConfirmationModal(false);
+      setShowFinalModal(true);
+    } catch (error) {
+      alert('Failed to send email.');
+      console.error('Error sending email:', error);
+    }
+  };
+
+  const renderSeat = (rowIndex, seatIndex) => {
+    const seatId = `${rowIndex}_${seatIndex}`;
+    const isBooked = bookedSeats.includes(seatId);
+    const isSelected = selectedSeats.includes(seatId);
+    const seatPriceKey = Object.keys(prices).find(key => prices[key].includes(seatId)) || 'medium';
+
+    let bgColor = 'bg-gray-300 hover:bg-gray-400';
+    if (isBooked) bgColor = 'bg-red-500 cursor-not-allowed';
+    else if (isSelected) bgColor = 'bg-green-500';
+    else if (seatPriceKey === 'low') bgColor = 'bg-yellow-200 hover:bg-yellow-300';
+    else if (seatPriceKey === 'high') bgColor = 'bg-yellow-600 hover:bg-yellow-700';
+    else bgColor = 'bg-yellow-400 hover:bg-yellow-500';
+
+    return (
+      <button
+        key={seatId}
+        disabled={isBooked}
+        className={`w-8 h-8 m-1 ${bgColor}`}
+        onClick={() => handleSeatClick(seatId)}
+        aria-label={`Seat ${seatId}`}
+      />
     );
   };
-  React.useEffect(() => {
-    let a = rowsData.filter((e) => e.isSelected).length;
-    let b = rowsData2.filter((e) => e.isSelected).length;
 
-    setPrice(a * ticketPrice1 + b * ticketPrice2);
-    setActive(price > 0 ? true : false);
-  }, [price, rowsData, rowsData2]);
-
-
-  const handleSeat = () => {
-    rowsData.forEach((e) =>
-      e.isSelected ? ticketList.silver.push(e.seat) : ""
-    );
-    rowsData2.forEach((e) =>
-      e.isSelected ? ticketList.platinium.push(e.seat) : ""
-    );
-    ticketList.price = price;
-    //ticketListfunc(ticketList);
-    console.log(ticketList);
-    setSeatActive(false);
-    handleCloseSeatingModal(ticketList);
-  };
   return (
-    <div
-      style={
-        seatingActive
-          ? {
-            display: "block", zIndex: 1000, position: "absolute", top: "10%", left: 0, height: "100vh"
-          }
-          : { display: "none" }
-      }
-      className="seatingModal"
-    >
-      <div className="seatingModal__nav">
-        <div>
-          <div>
-            <h4 style={{ color: "white", fontSize: 20 }}>{movie_details.movie_name}</h4>
-            <h5 style={{ color: "white" }}>{movie_details.cinemas_name}</h5>
-          </div>
-          <div>
-            <button style={{ cursor: "pointer", fontSize: 25 }} onClick={() => handleCloseSeatingButton()}>X</button>
+    <div>
+      <Navbar />
+      <div className="p-4">
+        <div className="mb-4">
+          <h1 className="text-xl font-bold">{movieDetails.name}</h1>
+          <p>{movieDetails.multiplex}</p>
+          <p>Date: {movieDetails.date} at {movieDetails.time}</p>
+        </div>
+        <div className="mb-4">
+          <label htmlFor="tickets" className="block font-medium">Number of tickets:</label>
+          <input
+            type="number"
+            id="tickets"
+            value={ticketsToBook}
+            onChange={(e) => setTicketsToBook(parseInt(e.target.value, 10))}
+            className="border p-2"
+            min="1"
+            max="6"
+          />
+        </div>
+        <div className="grid grid-cols-12 gap-1 mb-4">
+          {Array.from({ length: rows }).map((_, rowIndex) =>
+            Array.from({ length: seatsPerRow }).map((_, seatIndex) =>
+              renderSeat(rowIndex + 1, seatIndex + 1)
+            )
+          )}
+        </div>
+        <div className="mb-4">
+          <p>Legend:</p>
+          <div className="flex space-x-2">
+            <div className="bg-yellow-200 w-6 h-6"></div><span>- 200</span>
+            <div className="bg-yellow-400 w-6 h-6"></div><span>- 220</span>
+            <div className="bg-yellow-600 w-6 h-6"></div><span>- 240</span>
+            <div className="bg-red-500 w-6 h-6"></div><span>- Booked</span>
+            <div className="bg-green-500 w-6 h-6"></div><span>- Selected</span>
           </div>
         </div>
-        <div>
-          <h3>{movie_details.date} {monthNames[new Date().getMonth()]} {movie_details.time}</h3>
-        </div>
-      </div>
-      <div className="seatingModal__seatContainer">
-        <div>
-          <h5>
-            {type1}-Rs. {ticketPrice1}
-          </h5>
-
-          <div className="seatingModal__seatContainer_can">
-            <div style={{ display: "grid" }}>
-              {Silver.map((e) => (
-                <div style={{ margin: 10, color: "gray" }} key={e}>
-                  {e}
-                </div>
-              ))}
-            </div>
-            <div className="seatingModal__seatContainer_seats">
-              {rowsData.map((e) => (
-                <div
-                  onClick={() => handleClick(e.id)}
-                  className={
-                    e.disable
-                      ? "disable"
-                      : e.isReserved
-                        ? "reserved"
-                        : e.isSelected
-                          ? "select"
-                          : "seats"
-                  }
-                  key={e.id}
-                >
-                  <p>{e.number}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-          <h5>
-            {type2}-Rs. {ticketPrice2}
-          </h5>
-          <div className="seatingModal__seatContainer_can">
-            <div style={{ display: "grid" }}>
-              {Silver.map((e) => (
-                <div style={{ margin: 10, color: "gray" }} key={e}>
-                  {e}
-                </div>
-              ))}
-            </div>
-            <div className="seatingModal__seatContainer_seats">
-              {rowsData2.map((e) => (
-                <div
-                  onClick={() => handleClick(e.id)}
-                  className={
-                    e.disable
-                      ? "disable"
-                      : e.isReserved
-                        ? "reserved"
-                        : e.isSelected
-                          ? "select"
-                          : "seats"
-                  }
-                  key={e.id}
-                >
-                  <p>{e.number}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="Screen">
-            <img src="https://i.imgur.com/XhsTL5Y.png" alt="screen" />
-          </div>
-        </div>
-      </div>
-      <div
-        style={active ? { display: "block" } : { display: "none" }}
-        className="PriceButton"
-      >
         <button
-          onClick={() => handleSeat()}
-          style={{ height: 40, margin: 10, marginLeft: "40%", cursor: "pointer" }}
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700"
+          onClick={handleBookingConfirmation}
         >
-          Rs. {price}
+          Confirm Booking
         </button>
+        {showConfirmationModal && (
+          <div className="absolute inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center">
+            <div className="bg-white p-4 rounded-lg shadow-lg max-w-sm">
+              <h2 className="text-lg font-semibold mb-4">Confirm Your Email</h2>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your email"
+                className="border p-2 w-full mb-4"
+              />
+              <p className="mb-4">Selected Seats: {selectedSeats.join(", ")}</p>
+              <p className="mb-4">Total Amount: {calculateTotalPrice()}</p>
+              <button
+                className="mt-2 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-700 w-full"
+                onClick={handlePayment}
+              >
+                Proceed to Payment
+              </button>
+            </div>
+          </div>
+        )}
+        {showFinalModal && (
+          <div className="absolute inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center">
+            <div className="bg-white p-4 rounded-lg shadow-lg max-w-sm">
+              <h2 className="text-lg font-semibold mb-4">Booking Successful</h2>
+              <p>Your tickets have been emailed to you. Thank you!</p>
+              <button
+                className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700"
+                onClick={() => window.location.href = '/'}
+              >
+                Exit
+              </button>
+            </div>
+          </div>
+        )}
       </div>
+      <Footer />
     </div>
   );
 };
 
-export default Seating;
+export default SeatingMap;

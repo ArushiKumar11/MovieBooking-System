@@ -1,270 +1,79 @@
-import React, { useEffect, useState, useContext } from "react";
-import DefaultlayoutHoc from "../layout/Default.layout";
-import { useParams, useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useParams,useNavigate } from "react-router-dom";
 import axios from "axios";
-import { MovieContext } from "../context/Movie.context";
-import Slider from "react-slick";
+import Navbar from "../components/Navbar";
 
-import PosterSlider from "../components/PosterSlider";
-import MovieHero from "../components/MovieHero/MovieHero.Component";
-import Cast from "../components/Cast";
-import Loader from "../components/Loader/Loader";
-
-import DefaultlayoutHoc from "../layout/Default.layout";
+import Footer from "../components/Footer";
 
 const MoviePage = () => {
   const { id } = useParams();
-  const navigate = useNavigate();
-
-  const { movie, setMovie } = useContext(MovieContext);
-
+  const [movie, setMovie] = useState(null);
   const [cast, setCast] = useState([]);
-  const [similarMovies, setSimilarMovies] = useState([]);
-  
   const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchData = async () => {
+      setIsLoading(true);
       try {
-        setIsLoading(true);
-
-        const [
-          castResponse,
-          similarResponse,
-          recommendedResponse,
-          movieResponse,
-        ] = await Promise.all([
-          axios.get(`/movie/${id}/credits`),
-          axios.get(`/movie/${id}/similar`),
-          axios.get(`/movie/${id}/recommendations`),
-          axios.get(`/movie/${id}`),
-        ]);
-
-        setCast(castResponse.data.cast);
-        setSimilarMovies(similarResponse.data.results);
-        setRecommendedMovies(recommendedResponse.data.results);
-        setMovie(movieResponse.data);
-
-        // Simulate a minimum loading duration of 2 seconds
-        setTimeout(() => {
-          setIsLoading(false);
-        }, 100);
+        const movieResponse = await axios.get(`http://localhost:5000/api/movie/${id}`);
+        setMovie(movieResponse.data.movie);
+        setCast(movieResponse.data.cast);
       } catch (error) {
-        console.error("Error fetching data:", error);
-        setIsLoading(false); // Set loading to false in case of an error
+        console.error("Error fetching movie data:", error);
       }
+      setIsLoading(false);
     };
 
-    setTimeout(() => {
-      window.scrollTo(0, 0);
-    }, 200);
-
     fetchData();
-  }, [id, setMovie]);
-
-  useEffect(() => {
-    setIsLoading(true);
   }, [id]);
 
-  const handleMovieClick = () => {
-    navigate(`/movie/${id}`);
+ 
+const handleBookShow = () => {
+    navigate(`/book/${id}`);
   };
 
-  const settingsCast = {
-    arrows: true,
-    slidesToShow: 4,
-    infinite: true,
-    dots: false,
-    // speed: 500,
-    slidesToScroll: 1,
-
-    autoplay: true,
-    speed: 2000,
-    autoplaySpeed: 2000,
-    cssEase: "linear",
-    responsive: [
-      {
-        breakpoint: 1024,
-        settings: {
-          slidesToShow: 3,
-          slidesToScroll: 3,
-          infinite: true,
-          dots: false,
-        },
-      },
-      {
-        breakpoint: 600,
-        settings: {
-          slidesToShow: 2,
-          slidesToScroll: 2,
-          initialSlide: 2,
-        },
-      },
-      {
-        breakpoint: 480,
-        settings: {
-          slidesToShow: 1,
-          slidesToScroll: 1,
-        },
-      },
-    ],
-  };
-
-  const settings = {
-    arrows: true,
-    slidesToShow: 3,
-    infinite: true,
-    dots: true,
-    // speed: 500,
-    slidesToScroll: 1,
-
-    autoplay: true,
-    speed: 2000,
-    autoplaySpeed: 2000,
-    cssEase: "linear",
-    responsive: [
-      {
-        breakpoint: 1024,
-        settings: {
-          slidesToShow: 3,
-          slidesToScroll: 3,
-          infinite: true,
-          dots: true,
-        },
-      },
-      {
-        breakpoint: 600,
-        settings: {
-          slidesToShow: 2,
-          slidesToScroll: 2,
-          initialSlide: 2,
-        },
-      },
-      {
-        breakpoint: 480,
-        settings: {
-          slidesToShow: 1,
-          slidesToScroll: 1,
-        },
-      },
-    ],
-  };
+  if (!movie) return <div className="text-center mt-5 text-red-600">Movie not found.</div>;
 
   return (
-    <>
-      {isLoading ? (
-        <Loader />
-      ) : (
-        <>
-          <MovieHero />
-          <div className="my-12 container px-4 lg:ml-20 lg:w-2/1">
-            <div className="flex flex-col items-start gap-3">
-              <h1 className="text-gray-800 font-bold text-2xl">
-                About the movie
-              </h1>
-              <p>{movie.overview}</p>
-            </div>
-
-            <div className="my-8">
-              <hr />
-            </div>
-
-            <div className="my-8">
-              <h2 className="text-gray-800 font-bold text-2xl mb-3">
-                Applicable Offers
-              </h2>
-              <div className="flex flex-col gap-3 lg:flex-row">
-                <div className="flex items-start gap-2 bg-yellow-100 p-3 border-yellow-400 border-dashed border-2 rounded-md">
-                  <div className="w-8 h-8">
-                    <FaCcVisa className="w-full h-full" />
-                  </div>
-                  <div className="flex flex-col items-start">
-                    <h3 className="text-gray-700 text-xl font-bold">
-                      Visa Stream Offer
-                    </h3>
-                    <p className="text-gray-600">
-                      Get 50% off up to INR 150 on all RuPay card* on BookMyShow
-                      Stream.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-2 bg-yellow-100 p-3 border-yellow-400 border-dashed border-2 rounded-md">
-                  <div className="w-8 h-8">
-                    <FaCcApplePay className="w-full h-full" />
-                  </div>
-                  <div className="flex flex-col items-start">
-                    <h3 className="text-gray-700 text-xl font-bold">
-                      Film Pass
-                    </h3>
-                    <p className="text-gray-600">
-                      Get 50% off up to INR 150 on all RuPay card* on BookMyShow
-                      Stream.
-                    </p>
-                  </div>
+<div>
+  <Navbar/>
+      <div className="container mx-auto px-4 py-4">
+        <div className="flex flex-wrap">
+          <div className="md:w-1/3">
+            <img src={movie.poster_url} alt={movie.title} className="rounded-lg shadow-lg w-full" />
+          </div>
+          <div className="md:w-2/3 md:pl-4">
+            <h1 className="text-3xl font-bold mb-2">{movie.title}</h1>
+            <p className="text-gray-800"><strong>Description:</strong> {movie.description}</p>
+            <p className="text-gray-800"><strong>Genre:</strong> {movie.genre}</p>
+            <p className="text-gray-800"><strong>Release Date:</strong> {new Date(movie.release_date).toLocaleDateString()}</p>
+            <p className="text-gray-800"><strong>Duration:</strong> {movie.duration} minutes</p>
+            <p className="text-gray-800"><strong>Language:</strong> {movie.language}</p>
+          </div>
+        </div>
+        <button onClick={handleBookShow} className="mt-4 bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700 transition duration-300">
+            Book a Show
+          </button>
+        <div className="mt-8">
+          <h2 className="text-2xl font-bold mb-3">Cast</h2>
+          <div className="flex flex-wrap">
+            {cast.map((member) => (
+              <div key={member.cast_id} className="w-full md:w-1/4 lg:w-1/6 p-2">
+                <div className="bg-white p-3 rounded-lg flex flex-col items-center text-center shadow-lg">
+                  <img src={member.profile_pic_url} alt={member.name} className="w-24 h-24 rounded-full mb-2" />
+                  <h5 className="text-lg font-medium">{member.name}</h5>
+                  <p className="text-sm text-gray-600">{member.role}</p>
                 </div>
               </div>
-            </div>
-
-            <div className="my-8">
-              <hr />
-            </div>
-
-            {/* Cast & Crew */}
-            <div className="my-8">
-              <h2 className="text-gray-800 font-bold text-2xl mb-4">
-                Cast and Crew
-              </h2>
-              <Slider {...settingsCast}>
-                {cast.map((castData) => (
-                  <Cast
-                    key={castData.id}
-                    image={castData.profile_path}
-                    castName={castData.original_name}
-                    role={castData.character}
-                  />
-                ))}
-              </Slider>
-            </div>
-
-            <div className="my-8">
-              <hr />
-            </div>
-
-            <div className="my-8">
-              <PosterSlider
-                config={settings}
-                title="Recommended Movies"
-                posters={recommendedMovies}
-                isDark={false}
-                onMovieClick={handleMovieClick}
-              />
-            </div>
-
-            <div className="my-8">
-              <hr />
-            </div>
-
-            {/* Movies */}
-            <div className="my-8">
-              <PosterSlider
-                config={settings}
-                title="BMS XCLUSICE"
-                posters={similarMovies}
-                isDark={false}
-                onMovieClick={handleMovieClick}
-              />
-            </div>
-
-            <div className="my-8">
-              <hr />
-            </div>
+            ))}
           </div>
-        
-        </>
-      )}
-    </>
+        </div>
+      </div>
+      <Footer />
+      
+</div>
   );
 };
 
-export default DefaultlayoutHoc(MoviePage);
+export default MoviePage;

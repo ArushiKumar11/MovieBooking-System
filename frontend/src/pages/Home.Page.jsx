@@ -6,7 +6,12 @@ import DefaultlayoutHoc from "../layout/Default.layout";
 
 import HeroCarousel from "../components/HeroCarousel/HeroCarousel";
 import PosterSlider from "../components/PosterSlider";
-
+const tmdbAPI = axios.create({
+  baseURL: "https://api.themoviedb.org/3",
+  params: {
+    api_key: process.env.REACT_APP_API_KEY,
+  },
+});
 const HomePage = () => {
  
   const [premierMovies, setpremierMovies] = useState([]);
@@ -15,7 +20,7 @@ const HomePage = () => {
 
   useEffect(() => {
     const requestPopularMovies = async () => {
-      const getPopularMovies = await axios.get("/movie/popular");
+      const getPopularMovies = await tmdbAPI.get("/movie/popular");
       setpremierMovies(getPopularMovies.data.results);
     };
     requestPopularMovies();
@@ -23,7 +28,7 @@ const HomePage = () => {
 
   useEffect(() => {
     const requestUpcomingMovies = async () => {
-      const getUpcomingMovies = await axios.get("/movie/upcoming");
+      const getUpcomingMovies = await tmdbAPI.get("/movie/upcoming");
       setonlineStreamEvents(getUpcomingMovies.data.results);
     };
     requestUpcomingMovies();
@@ -39,8 +44,8 @@ const HomePage = () => {
         <div className="container mx-auto px-4 md:px-12 my-8 flex flex-col gap-3">
           
           <PosterSlider
-            title="Premiers"
-            subtitle="Brand new release every Friday"
+            title="New Release"
+           
             posters={premierMovies}
             isDark={true}
           />
@@ -49,8 +54,8 @@ const HomePage = () => {
 
       <div className="container mx-auto px-4 md:px-12 my-8 flex flex-col gap-3">
         <PosterSlider
-          title="Online Streaming Events"
-          subtitle="Online Streaming Events"
+          title="Highly Rated"
+          
           posters={onlineStreamEvents}
           isDark={false}
         />

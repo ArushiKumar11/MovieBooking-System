@@ -54,7 +54,7 @@ function NavLg({ cities, selectedCity, onSelectCity }) {
               ))}
             </select>
           </div>
-          <LoginModal/>
+         <LoginModal/>
           <div className="w-8 h-8 text-white">
             <BiMenu className="w-full h-full" />
           </div>

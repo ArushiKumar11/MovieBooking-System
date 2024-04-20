@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -8,8 +8,20 @@ const LoginModal = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [user, setUser] = useState(() => JSON.parse(localStorage.getItem('user'))); // Initialize from local storage directly
 
   const navigate = useNavigate();
+
+  // Sync user state to local storage
+  useEffect(() => {
+    if (user) {
+      localStorage.setItem('user', JSON.stringify(user));
+      closeModal();
+       // Redirect after login
+    } else {
+      localStorage.removeItem('user');
+    }
+  }, [user, navigate]);
 
   const closeModal = () => setIsOpen(false);
   const openModal = () => setIsOpen(true);
@@ -17,26 +29,29 @@ const LoginModal = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      // Substitute with your actual backend URL
       const response = await axios.post('http://localhost:5000/api/login', { email, password });
-      localStorage.setItem('user', JSON.stringify(response.data));
+      setUser(response.data); // Set user in state
       closeModal();
-      navigate('/'); // Redirect to homepage or user dashboard after login
+    
     } catch (error) {
       console.error('Login error:', error.response || error);
       alert('Failed to login. Please check your credentials.');
     }
   };
 
+  const handleLogout = () => {
+    setUser(null); // Clear user state which will also remove from local storage via useEffect
+  };
+
   const redirectToRegister = () => {
-    navigate('/register'); // Adjust the route as needed for your app
+    navigate('/register');
     closeModal();
   };
 
   return (
     <>
-      <button onClick={openModal} className="bg-red-600 text-white px-2 py-1 text-sm rounded">
-        {localStorage.getItem('user') ? `Hi, ${JSON.parse(localStorage.getItem('user')).fullName}` : 'Sign In'}
+      <button onClick={user ? handleLogout : openModal} className="bg-red-600 text-white px-2 py-1 text-sm rounded">
+        {user ? `Hi, ${user.fullName}` : 'Sign In'}
       </button>
 
       <Transition appear show={isOpen} as={Fragment}>
@@ -69,14 +84,13 @@ const LoginModal = () => {
                 <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-gray-900">
                   Sign in to your account
                 </Dialog.Title>
-                <form className="mt-4" onSubmit={handleLogin}>
-                  <div>
+                <form onSubmit={handleLogin}>
+                  <div className="mt-4">
                     <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                       Email
                     </label>
                     <input
                       id="email"
-                      name="email"
                       type="email"
                       required
                       className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
@@ -90,7 +104,6 @@ const LoginModal = () => {
                     </label>
                     <input
                       id="password"
-                      name="password"
                       type="password"
                       required
                       className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
